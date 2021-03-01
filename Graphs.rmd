@@ -1,0 +1,46 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+census <- read.csv("Census664.csv", header = T)
+census
+```
+
+
+```{r}
+library(ggplot2)
+
+B111 <- ggplot(data=census, aes(x=census$education, y=census$capital.gain)) + geom_bar(stat="identity",  fill="#56B4E9") + 
+  coord_flip() + labs(title = "Capital Gains by Level of Education", y ="Capital Gains", x=    "Levels of Education")
+
+B111
+```
+
+```{r}
+
+library(ggplot2)
+
+A <- ggplot(data=census, aes(x=census$income, y=census$capital.gain)) + geom_bar(stat="identity", color="pink") + 
+  labs(title = "Salary Range by Capital Gains", y ="Capital Gains", x= "Salary Range")
+
+A
+```
+
+```{r}
+library(ggplot2)
+
+B <- ggplot(census, aes(x = census$education, fill=census$income)) + geom_bar() + labs(title = "Salary Range Of Different Levels of Education", y = "Count", x = "Level of Education", fill = "Salary Range") +coord_flip()
+  
+B
+```
+```{r}
+library(ggplot2)
+
+C <- ggplot(census, aes(x = census$marital.status, fill=census$income)) + geom_bar() + labs(title = "Salary Range by Marital Status", y = "Count", x = "Marital Status", fill = "Salary Range") +coord_flip()
+  
+C
+```

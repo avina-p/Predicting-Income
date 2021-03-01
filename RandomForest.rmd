@@ -1,0 +1,80 @@
+```{r}
+Cens <- read.csv("~/Desktop/Census664.csv", header=TRUE)
+```
+```{r}
+summary(Cens)
+```
+
+```{r}
+library(rpart)
+```
+
+
+```{r}
+install.packages("caret")
+```
+
+```{r}
+library(caret)
+set.seed(3)
+Cens2<-Cens
+Cens2$income <- as.factor(as.character(Cens2$income))
+intrain <- createDataPartition(Cens2$income,p=0.7,list = FALSE)
+train <- Cens2[intrain,]
+test <- Cens2[-intrain,]
+```
+
+
+```{r}
+library(rpart)
+tree.fit<- rpart(income ~ age + workclass + fnlwgt + education + education.num + marital.status + occupation + relationship + race + sex + capital.gain + capital.loss + hours.per.week, data=train,method = 'class')
+print(tree.fit)
+```
+
+```{r}
+library(rpart.plot)
+rpart.plot(tree.fit, box.col=c("lightskyblue1", "indianred"))
+```
+```{r}
+mod = rpart(income ~., data = train)
+pred1 = predict(mod, type="class")
+table(pred1)
+```
+
+
+```{r}
+install.packages('e1071', dependencies=TRUE)
+```
+
+```{r}
+Prediction1<- predict(tree.fit,newdata=test[-15],type = 'class')
+tree.acu<-confusionMatrix(Prediction1,test$income)$overall[1]
+tree.acu
+```
+```{r}
+tree.acu<-confusionMatrix(Prediction1,test$income)$overall[1]
+tree.acu
+```
+
+```{r}
+library(randomForest)
+```
+```{r}
+set.seed(3)
+random.for <- randomForest(income ~ age + workclass + fnlwgt + education + education.num + marital.status + occupation + relationship + race + sex + capital.gain + capital.loss + hours.per.week,data = train)
+print(random.for)
+```
+```{r}
+ranforaccu <- predict(random.for,newdata = test[,-15],type = 'class')
+rf.acu<-confusionMatrix(ranforaccu,test$income)$overall[1]
+rf.acu
+```
+
+```{r}
+print(importance(random.for,type = 2)) 
+```
+
+```{r}
+varImpPlot(random.for, main="Random Forest Important Variables")
+```
+

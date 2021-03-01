@@ -1,0 +1,174 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(plyr)
+data <- read.csv("Census664.csv", header = T)
+
+data
+
+
+
+str(data)
+
+
+head(data$income)
+
+```
+
+
+```{r}
+
+set.seed(3)
+
+dt <- sort(sample(nrow(data), nrow(data)*.7))
+train <-data[dt,]
+test <-data[-dt,]
+
+```
+
+```{r}
+library(rpart)
+tree.fit<- rpart(income ~ age + workclass + fnlwgt + education + education.num + marital.status + occupation + relationship + race + sex + capital.gain + capital.loss + hours.per.week, data=train,method = 'class')
+print(tree.fit)
+```
+
+```{r}
+library(rpart.plot)
+rpart.plot(tree.fit, box.col=c("lightskyblue1", "indianred"))
+```
+```{r}
+mod = rpart(income ~., data = train)
+pred1 = predict(mod, type="class")
+table(pred1)
+```
+
+```{r}
+library(caret)
+library(randomForest)
+```
+
+```{r}
+pred.acu<- predict(tree.fit,newdata=test[-15],type = 'class')
+tree.acu<-confusionMatrix(pred.acu,test$income)$overall[1]
+tree.acu
+```
+
+```{r}
+set.seed(3)
+random.for <- randomForest(income ~ age + workclass + fnlwgt + education + education.num + marital.status + occupation + relationship + race + sex + capital.gain + capital.loss + hours.per.week,data = train)
+print(random.for)
+```
+
+```{r}
+ranforaccu <- predict(random.for,newdata = test[,-15],type = 'class')
+rf.acu<-confusionMatrix(ranforaccu,test$income)$overall[1]
+rf.acu
+```
+```{r}
+varImpPlot(random.for, main="Random Forest Important Variables")
+```
+
+
+```{r}
+
+null.model <- glm(income ~ 1, family = binomial(link = "logit"),  data = train )
+
+full.model <- glm(income ~ age + workclass + fnlwgt + education + marital.status +capital.gain + capital.loss+ hours.per.week + occupation + relationship + race + sex,family = binomial(link = "logit"),  data = train )
+
+
+summary(full.model)
+
+
+```
+
+
+```{r}
+
+step(null.model, direction = "forward", scope = formula(full.model), k = 2, steps = 3 )
+
+```
+
+
+```{r}
+
+new.model <- glm(income ~ relationship + education + capital.gain, family = binomial(link = "logit"), data = train) 
+
+summary(new.model)
+
+```
+
+
+```{r}
+
+anova(full.model, new.model, test = "Chisq")
+
+```
+
+
+
+##Multicollinearity
+
+Multicollinearity corresponds to a situation where the data contain highly correlated predictor variables.
+
+As a rule of thumb, a VIF value that exceeds 5 or 10 indicates a problematic amount of collinearity. In our example, there is no collinearity
+
+
+
+```{r}
+ library(car)
+vif(new.model, prediction)[,1]
+
+```
+
+
+Using the our final model; it predicted 83% of the response from our testing dataset
+
+```{r}
+library(caret)
+
+fitted.results <- predict(new.model,newdata= test,type='response')
+fitted.results <- as.factor(ifelse(fitted.results > 0.5,"<=50K",">50K"))
+
+signif(mean(fitted.results != test$income),2) #accuracy = .83
+
+
+```
+
+
+##Receiver Operating Characteristic (ROC) Curve and (AUROCC)
+
+The ROC curve shows the relationship between sensitivity and specificity.
+It can be also used to test accuracy; the closer the graph is to the top and left-hand borders, the more accurate the test.
+
+Likewise, the closer the graph to the diagonal, the less accurate the test.
+
+A perfect test has an area under the ROC curve (AUROCC) of 1. The diagonal line in a ROC curve represents perfect chance. In other words, a test that follows the diagonal has no better odds of detecting something than a random flip of a coin. The area under the diagonal is .5. Therefore, a useless test (one that has no better odds than chance alone) has a AUROCC of .5.
+ 
+In our graph; the area under the ROC curve .88
+
+
+
+
+
+```{r}
+library(ROCR)
+
+p <- predict(new.model, newdata= test, type="response")
+pr <- prediction(p, test$income)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+abline(0,1, col = "blue")
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+
+```
+
+
+

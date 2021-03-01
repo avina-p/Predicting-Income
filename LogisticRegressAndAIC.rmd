@@ -1,0 +1,68 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+
+data <- read.csv("~/Desktop/Census664.csv", header = T)
+
+data
+
+
+str(data)
+
+
+head(data$income)
+
+```
+
+```{r}
+
+set.seed(3)
+
+dt <- sort(sample(nrow(data), nrow(data)*.7))
+train <-data[dt,]
+test <-data[-dt,]
+
+```
+
+
+
+
+```{r}
+
+null.model <- glm(income ~ 1, family = binomial(link = "logit"),  data = train )
+
+full.model <- glm(income ~ age + workclass + fnlwgt + education + education.num + marital.status + occupation + relationship + race + sex + capital.gain + capital.loss + hours.per.week,family = binomial(link = "logit"),  data = train )
+
+
+summary(full.model)
+
+
+```
+
+
+```{r}
+
+
+step(null.model, direction = "forward", scope = formula(full.model), k = 2, steps = 3 )
+
+```
+
+
+```{r}
+
+new.model <- glm(income ~ relationship + education + occupation, family = binomial(link = "logit"), data = train) 
+
+summary(new.model)
+
+
+
+
+```
+
+
+
